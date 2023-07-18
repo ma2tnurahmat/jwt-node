@@ -1,9 +1,14 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const fs = require('fs');
 
 const app = express();
 const secretKey = process.env.SECRET_KEY; // Menggunakan kunci rahasia dari variabel lingkungan
+// Mengambil nilai private key dari file .env
+const privateKey = fs.readFileSync(process.env.PRIVATE_KEY, 'utf8');
+const publicKey = fs.readFileSync(process.env.PUBLIC_KEY, 'utf8');
+
 
 app.use(express.json());
 
@@ -23,7 +28,11 @@ app.post('/login', (req, res) => {
   };
 
   // Menghasilkan token JWT dengan menggunakan secret key
-  const token = jwt.sign(payload, secretKey, { expiresIn: '1h' });
+  // const token = jwt.sign(payload, secretKey, { expiresIn: '1h' });
+
+  // Menghasilkan token JWT dengan menggunakan private key RSA
+  const token = jwt.sign(payload, privateKey, { algorithm: 'RS256', expiresIn: '1h' });
+
 
   // Mengirim token JWT sebagai response
   res.json({ token });
@@ -40,8 +49,19 @@ function authenticateToken(req, res, next) {
     return res.status(401).json({ message: 'Access token not found' });
   }
 
-  // Memverifikasi token menggunakan secret key
-  jwt.verify(token, secretKey, (err, user) => {
+  // // Memverifikasi token menggunakan secret key
+  // jwt.verify(token, secretKey, (err, user) => {
+  //   // Jika token tidak valid
+  //   if (err) {
+  //     return res.status(403).json({ message: 'Invalid token' });
+  //   }
+
+  //   // Menyimpan data user ke dalam objek request untuk digunakan oleh endpoint selanjutnya
+  //   req.user = user;
+  //   next();
+  // });
+  // Memverifikasi token menggunakan public key RSA
+  jwt.verify(token, publicKey, { algorithms: ['RS256'] }, (err, user) => {
     // Jika token tidak valid
     if (err) {
       return res.status(403).json({ message: 'Invalid token' });
@@ -51,6 +71,7 @@ function authenticateToken(req, res, next) {
     req.user = user;
     next();
   });
+
 }
 
 // Contoh penggunaan middleware authenticateToken
