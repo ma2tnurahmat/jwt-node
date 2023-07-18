@@ -1,8 +1,9 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 const app = express();
-const secretKey = 'yourSecretKey'; // Kunci rahasia untuk JWT
+const secretKey = process.env.SECRET_KEY; // Menggunakan kunci rahasia dari variabel lingkungan
 
 app.use(express.json());
 
